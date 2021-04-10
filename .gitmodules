@@ -1,0 +1,3 @@
+[submodule "phoneME-GP2X-SDL"]
+	path = phoneME-GP2X-SDL
+	url = https://github.com/j2me-preservation/phoneME-GP2X-SDL.git
