@@ -66,7 +66,7 @@ try:
             except:
                 return False
 
-        for i in range(20):
+        for i in range(50):
             attempt_start = time.time()
 
             if try_ping():
@@ -119,7 +119,7 @@ try:
             except:
                 return False
 
-        for i in range(20):
+        for i in range(50):
             attempt_start = time.time()
 
             if try_ping():
