@@ -7,8 +7,10 @@ jobs:
   qemu:
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout
+      - name: Checkout repository and submodules
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Install prerequisites
         run: |
           sudo apt-get update -y && sudo apt-get install -y \
