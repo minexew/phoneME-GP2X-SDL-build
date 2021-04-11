@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  push:
+
+jobs:
+  qemu:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install prerequisites
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y \
+            curl \
+            p7zip \
+            python3 \
+            python3-pexpect \
+            qemu-system-x86 \
+            ssh \
+            sshpass
+
+      - name: Download base image
+        run: |
+          curl -LO https://github.com/minexew/phoneME-GP2X-SDL-build/releases/download/lenny/debian-lenny.qcow2.xz
+          unxz debian-lenny.qcow2.xz
+
+      - name: Run machinery
+        run: python3 main.py
