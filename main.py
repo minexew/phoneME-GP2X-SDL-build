@@ -16,9 +16,13 @@ BASE_IMAGE = {
 
 logging.basicConfig(level=logging.DEBUG)
 
-# Based on https://stackoverflow.com/questions/45874326/qemu-guest-automation-using-python-pexpect
+# Attempt to detect KVM
+if Path("/sys/module/kvm").exists() or Path("/sys/module/kvm_intel").exists():
+    kvm_args = ['-enable-kvm']
+else:
+    kvm_args = []
 
-QEMU_ARGS = ['-enable-kvm',
+QEMU_ARGS = kvm_args + [
              '-m', '1024',      # 7-zip needs A LOT of memory
              '-hda', str(WORK_IMAGE),
              '-nic', 'user,hostfwd=tcp::10022-:22',
@@ -28,6 +32,7 @@ QEMU_ARGS = ['-enable-kvm',
 logging.debug("Copying base image")
 shutil.copyfile(BASE_IMAGE, WORK_IMAGE)
 
+# Based on https://stackoverflow.com/questions/45874326/qemu-guest-automation-using-python-pexpect
 logging.debug("Spawning QEMU")
 child = pexpect.spawn("qemu-system-i386", QEMU_ARGS)
 start = time.time()
