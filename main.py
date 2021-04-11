@@ -80,7 +80,7 @@ try:
             raise Exception("VM boot timed out")
 
     logging.debug("Sync files")
-    for path in ["phoneME-GP2X-SDL", f"debian-{DEBIAN_VER}/packages", "tarballs", "build.sh"]:
+    for path in ["phoneME-GP2X-SDL", f"debian-{DEBIAN_VER}/packages", "jars", "tarballs", "build.sh", "test.sh"]:
         subprocess.check_call([*SSHPASS, "scp", "-r", *SSH_OPTIONS, path, "root@localhost:"])
 
     logging.debug("Run build script")
@@ -88,6 +88,52 @@ try:
 
     logging.debug("Exfiltrate results")
     subprocess.check_call([*SSHPASS, "scp", "-r", *SSH_OPTIONS, "root@localhost:build_output.7z", "./"])
+
+    logging.debug("Shutting down")
+    subprocess.check_call([*SSHPASS, "ssh", *SSH_OPTIONS, "root@localhost", "poweroff"])
+    child.expect(pexpect.EOF)
+except BaseException:
+    child.close()
+    raise
+
+
+logging.debug("Spawning QEMU")
+child = pexpect.spawn("qemu-system-i386", QEMU_ARGS)
+start = time.time()
+
+try:
+    if DEBIAN_VER >= 6:
+        logging.debug("Awaiting login shell")
+
+        child.expect('login: ', timeout=300)
+        logging.info("Got login prompt after %g seconds", time.time() - start)
+    else:
+        # The child.expect approach doesn't work for our Debian 5 image, so instead we repeatedly poke the VM over SSH
+
+        ATTEMPT_SECS = 3
+
+        def try_ping():
+            try:
+                subprocess.check_call([*SSHPASS, "ssh", *SSH_OPTIONS, "root@localhost", "exit"], timeout=ATTEMPT_SECS)
+                return True
+            except:
+                return False
+
+        for i in range(20):
+            attempt_start = time.time()
+
+            if try_ping():
+                logging.info("VM up after %g seconds", time.time() - start)
+                break
+            else:
+                rem = ATTEMPT_SECS - (time.time() - attempt_start)
+                if rem > 0:
+                    time.sleep(rem)
+        else:
+            raise Exception("VM boot timed out")
+
+    logging.debug("Run test script")
+    subprocess.check_call([*SSHPASS, "ssh", *SSH_OPTIONS, "root@localhost", "sh test.sh"])
 
     logging.debug("Shutting down")
     subprocess.check_call([*SSHPASS, "ssh", *SSH_OPTIONS, "root@localhost", "poweroff"])
