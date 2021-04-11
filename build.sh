@@ -9,12 +9,32 @@ cd ..
 
 # Build GCC 3
 tar xfa tarballs/gcc-3.4.6.tar.bz2
+mkdir -p gcc-3.4.6.build-hostbinutils
+cd gcc-3.4.6.build-hostbinutils
+../gcc-3.4.6/configure --prefix=/opt/gcc-3.4.6-hostbinutils --enable-languages=c,c++
+make
+make install
+export PATH=/opt/gcc-3.4.6-hostbinutils/bin:$PATH
+gcc --version
+cd ..
+
+# Build binutils
+tar xfa tarballs/binutils-2.16.1.tar.bz2
+mkdir -p binutils.build
+cd binutils.build
+../binutils-2.16.1/configure --prefix=/opt/gcc-3.4.6
+make
+make install
+export PATH=/opt/gcc-3.4.6/bin:$PATH
+ld --version
+cd ..
+
+# Build GCC 3 AGAIN with new (old) binutils
 mkdir -p gcc-3.4.6.build
 cd gcc-3.4.6.build
 ../gcc-3.4.6/configure --prefix=/opt/gcc-3.4.6 --enable-languages=c,c++
 make
 make install
-export PATH=/opt/gcc-3.4.6/bin:$PATH
 gcc --version
 cd ..
 

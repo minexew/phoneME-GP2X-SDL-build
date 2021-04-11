@@ -14,7 +14,9 @@ Run it:
 
 Tool versions:
 - Debian 5.0.10
+- binutils 2.16.1
 - gcc 3.4.6
+- (host libc)
 - SDL 1.2.15
 - SDL_image 1.2.12
 - SDL_mixer 1.2.12
