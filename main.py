@@ -75,7 +75,7 @@ try:
             raise Exception("VM boot timed out")
 
     logging.debug("Sync files")
-    for path in ["phoneME-GP2X-SDL", "packages", "tarballs", "build.sh"]:
+    for path in ["phoneME-GP2X-SDL", f"debian-{DEBIAN_VER}/packages", "tarballs", "build.sh"]:
         subprocess.check_call([*SSHPASS, "scp", "-r", *SSH_OPTIONS, path, "root@localhost:"])
 
     logging.debug("Run build script")
