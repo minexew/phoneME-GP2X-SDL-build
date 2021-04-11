@@ -76,3 +76,6 @@ cd ..
 # Configure VGA mode (GRUB1 only)
 sed -i 's/^# defoptions=quiet$/# defoptions=quiet vga=0x311/' /boot/grub/menu.lst
 update-grub
+
+# Build termfix
+gcc -o termfix termfix.c

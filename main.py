@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -25,9 +26,13 @@ else:
 QEMU_ARGS = kvm_args + [
              '-m', '1024',      # 7-zip needs A LOT of memory
              '-hda', str(WORK_IMAGE),
+             '-monitor', 'tcp:127.0.0.1:55555,server,nowait',
              '-nic', 'user,hostfwd=tcp::10022-:22',
              '-nographic',
              ]
+
+SSHPASS = ["sshpass", "-p", "root"]
+SSH_OPTIONS = "-q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Port=10022".split(" ")
 
 logging.debug("Copying base image")
 shutil.copyfile(BASE_IMAGE, WORK_IMAGE)
@@ -40,9 +45,6 @@ start = time.time()
 # Expected: qemu-system-i386, ssh, sshfs
 
 try:
-    SSHPASS = ["sshpass", "-p", "root"]
-    SSH_OPTIONS = "-q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Port=10022".split(" ")
-
     if DEBIAN_VER >= 6:
         logging.debug("Awaiting login shell")
 
@@ -80,7 +82,7 @@ try:
             raise Exception("VM boot timed out")
 
     logging.debug("Sync files")
-    for path in ["phoneME-GP2X-SDL", f"debian-{DEBIAN_VER}/packages", "jars", "tarballs", "build.sh", "test.sh"]:
+    for path in ["phoneME-GP2X-SDL", f"debian-{DEBIAN_VER}/packages", "jars", "tarballs", "build.sh", "test.sh", "termfix.c"]:
         subprocess.check_call([*SSHPASS, "scp", "-r", *SSH_OPTIONS, path, "root@localhost:"])
 
     logging.debug("Run build script")
@@ -132,8 +134,19 @@ try:
         else:
             raise Exception("VM boot timed out")
 
-    logging.debug("Run test script")
-    subprocess.check_call([*SSHPASS, "ssh", *SSH_OPTIONS, "root@localhost", "sh test.sh"])
+    for jar in Path("jars").iterdir():
+        logging.debug("Run test script")
+        # this will hang in the running midlet. that's ok
+        proc = subprocess.Popen([*SSHPASS, "ssh", *SSH_OPTIONS, "root@localhost", f"sh test.sh {jar.name}"])
+        time.sleep(30) # TODO: instead of long sleep, bang on the door
+
+        # https://unix.stackexchange.com/questions/426652/connect-to-running-qemu-instance-with-qemu-monitor
+        os.system(f"echo screendump {jar.stem}.ppm | nc 127.0.0.1 55555")
+
+        proc.kill()
+        time.sleep(3)
+
+        subprocess.check_call(["compare", "-metric", "rmse", f"{jar.stem}.ppm", f"test-expect/{jar.stem}.png", "diff.png"])
 
     logging.debug("Shutting down")
     subprocess.check_call([*SSHPASS, "ssh", *SSH_OPTIONS, "root@localhost", "poweroff"])

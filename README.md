@@ -3,6 +3,7 @@
 Pre-reqs:
 - python3
 - `pip3 install pexpect`
+- imagemagick
 - qemu-system-i386
 - ssh
 - sshpass
